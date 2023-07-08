@@ -174,7 +174,7 @@ public class TrackingUserDetailsResponse {
         public Object etaDeliveryDate;
         @SerializedName("actual_delivery_date")
         @Expose
-        public Object actualDeliveryDate;
+        public String actualDeliveryDate;
         @SerializedName("pricing")
         @Expose
         public Object pricing;
@@ -519,7 +519,7 @@ public class TrackingUserDetailsResponse {
             return this;
         }
 
-        public Data withActualDeliveryDate(Object actualDeliveryDate) {
+        public Data withActualDeliveryDate(String actualDeliveryDate) {
             this.actualDeliveryDate = actualDeliveryDate;
             return this;
         }
@@ -1085,7 +1085,7 @@ public class TrackingUserDetailsResponse {
             return actualDeliveryDate;
         }
 
-        public void setActualDeliveryDate(Object actualDeliveryDate) {
+        public void setActualDeliveryDate(String actualDeliveryDate) {
             this.actualDeliveryDate = actualDeliveryDate;
         }
 

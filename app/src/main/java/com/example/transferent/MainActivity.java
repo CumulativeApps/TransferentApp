@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,15 +40,19 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
     String trackingNumber;
-    TextView Name, Origin, Destination, OrderStatus, PickedOn, Remark;
+    TextView Name, Origin, Destination, OrderStatus, PickedOn, Remark, TrackingId;
+    String name, origin, destination, orderStatus, pickedOn, remark, trackingId;
+    ;
     String authToken;
     String setStatus;
     String getStatus;
     ArrayList<ShipmentStatus> shipmentStatusList = new ArrayList<>();
     Spinner shipmentStatusSpinner;
-//    private ProgressDialog progressDialog;
-    String statusName;
-    boolean callSpinner = false;
+    TextView tvOrderStatusTitle;
+    AlertDialog dialog;
+    private ProgressDialog progressDialog;
+    String spinnerStatusName;
+    Button changeStatusButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,27 +70,63 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        TrackingId = findViewById(R.id.textViewName);
         Name = findViewById(R.id.txtName);
         Origin = findViewById(R.id.txtOrigin);
         Destination = findViewById(R.id.txtDestination);
         OrderStatus = findViewById(R.id.txtOrderStatus);
         PickedOn = findViewById(R.id.txtPickedUpOn);
         Remark = findViewById(R.id.txtRemark);
+        changeStatusButton = findViewById(R.id.btnChangeStatus);
 
         //retrieve the scanned tracking number from the intent extras
         trackingNumber = getIntent().getStringExtra("TRACKING_NUMBER");
+        name = getIntent().getStringExtra("Name");
+        origin = getIntent().getStringExtra("Origin");
+        destination = getIntent().getStringExtra("Destination");
+        pickedOn = getIntent().getStringExtra("PickedOn");
+        remark = getIntent().getStringExtra("Remark");
+        getStatus = getIntent().getStringExtra("SET_STATUS");
+        System.out.println("getStatus" + getStatus);
+
+        Name.setText(name);
+        TrackingId.setText(trackingNumber);
+        Origin.setText(origin);
+        Destination.setText(destination);
+        OrderStatus.setText(getStatus);
+        PickedOn.setText(pickedOn);
+        Remark.setText(remark);
+        if (getStatus.equals("Asset Delivered") || getStatus.equals("Shipment Delivered")) {
+            shipmentStatusSpinner = findViewById(R.id.spnOrderStatus);
+            tvOrderStatusTitle = findViewById(R.id.tvOrderStatusTitle);
+            shipmentStatusSpinner.setVisibility(View.GONE);
+            changeStatusButton.setVisibility(View.GONE);
+            tvOrderStatusTitle.setVisibility(View.GONE);
+        } else {
+            trackingNumberAPI();
+            spinnerMethod();
+
+
+        }
 
         //display the tracking number in a TextView or any other view
-        TextView textView = findViewById(R.id.textViewName);
-        textView.setText(trackingNumber);
-        trackingNumberAPI();
-        spinnerMethod();
 
-}
+        TextView DeliveryDate = findViewById(R.id.txtDeliveryDate);
+        LinearLayout linearDeliveryDate = findViewById(R.id.linerDeliveryDate);
+//
+        String getDeliveryDate = getIntent().getStringExtra("DeliveryDate");
+//
+        if (getDeliveryDate == null) {
+            linearDeliveryDate.setVisibility(View.GONE);
+        } else {
+            linearDeliveryDate.setVisibility(View.VISIBLE);
+            DeliveryDate.setText(getDeliveryDate);
+        }
+    }
 
     private void spinnerMethod() {
-        shipmentStatusList.add(new ShipmentStatus("Update Tracking Status"));
+        System.out.println("spinnerMethod");
+        shipmentStatusList.add(new ShipmentStatus("Select"));
         shipmentStatusList.add(new ShipmentStatus("Pending Pickup From Origin"));
         shipmentStatusList.add(new ShipmentStatus("Shipment Picked Up From Origin"));
         shipmentStatusList.add(new ShipmentStatus("Shipment Scan Tallied"));
@@ -121,89 +162,73 @@ public class MainActivity extends AppCompatActivity {
         shipmentStatusList.add(new ShipmentStatus("Future Delivery Cancelled"));
         shipmentStatusList.add(new ShipmentStatus("Shipment Picked / In Transit"));
         shipmentStatusList.add(new ShipmentStatus("Asset Delivered"));
-        getStatus = getIntent().getStringExtra("SET_STATUS");
-        System.out.println("ScanScreenSetStatus" + getStatus);
-        if (getStatus.equals("Asset Delivered") || getStatus.equals("Shipment Delivered")) {
-            System.out.println("RECEIVE Asset Delivered OR Shipment Delivered");
 
-        }else{
-            shipmentStatusSpinner = findViewById(R.id.spnOrderStatus);
-            ShipmentStatusAdapter adapter = new ShipmentStatusAdapter(this, shipmentStatusList);
-            shipmentStatusSpinner.setAdapter(adapter);
-            shipmentStatusSpinner.setVisibility(View.VISIBLE);
+        shipmentStatusSpinner = findViewById(R.id.spnOrderStatus);
+        ShipmentStatusAdapter adapter = new ShipmentStatusAdapter(this, shipmentStatusList);
+        shipmentStatusSpinner.setAdapter(adapter);
 
-            shipmentStatusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        shipmentStatusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                ShipmentStatus selectedStatus = (ShipmentStatus) parent.getItemAtPosition(position);
+                spinnerStatusName = selectedStatus.getStatusName();
+            }
 
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    System.out.println("SPINNERCALL");
-                    ShipmentStatus selectedStatus = (ShipmentStatus) parent.getItemAtPosition(position);
-                    statusName = selectedStatus.getStatusName();
-
-
-                    if (statusName.equals("Asset Delivered")) {
-                        showMyDialog();
-                    } else if (statusName.equals("Shipment Delivered")) {
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+        changeStatusButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (spinnerStatusName != null && !spinnerStatusName.isEmpty()) {
+                    if (spinnerStatusName.equals("Asset Delivered") || spinnerStatusName.equals("Shipment Delivered")) {
                         showMyDialog();
                     } else {
-                        updateTrackingDetails(trackingNumber, statusName);
+                        updateTrackingDetails(trackingNumber, spinnerStatusName);
                     }
-
-
+                } else {
+                    Toast.makeText(MainActivity.this, "Please select a status", Toast.LENGTH_SHORT).show();
                 }
+            }
 
-                public void showMyDialog() {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    View view = getLayoutInflater().inflate(R.layout.add_aim_dialog, null);
-                    builder.setView(view);
-                    EditText editText = view.findViewById(R.id.edit_Aim_text);
-                    Button closeButton = view.findViewById(R.id.close_Aim_button);
-                    Button saveButton = view.findViewById(R.id.save_Aim_button);
-                    AlertDialog dialog = builder.create();
-                    closeButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            dialog.dismiss();
-                        }
-                    });
+            public void showMyDialog() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                View view = getLayoutInflater().inflate(R.layout.add_aim_dialog, null);
+                builder.setView(view);
+                EditText editText = view.findViewById(R.id.edit_Aim_text);
+                Button closeButton = view.findViewById(R.id.close_Aim_button);
+                Button saveButton = view.findViewById(R.id.save_Aim_button);
+                dialog = builder.create();
+                closeButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
 
-                    saveButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            String text = editText.getText().toString();
-                            verifyStatusOtp(trackingNumber,text);
-
-
-                            // Do something with the text
-                            dialog.dismiss();
-                        }
-                    });
-
-                    dialog.show();
-                }
+                saveButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        String text = editText.getText().toString();
+                        verifyStatusOtp(trackingNumber, text);
 
 
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
-                    // do nothing
-                }
-            });
+                        // Do something with the text
 
-        }
+                    }
+                });
 
+                dialog.show();
+            }
 
-
-
-
+        });
     }
 
 
     private void trackingNumberAPI() {
-//        progressDialog = new ProgressDialog(this);
-//        progressDialog.setMessage("Loading...");
-//        progressDialog.setCancelable(false);
-
-        System.out.println("APICALL");
+        System.out.println("TRACKING API CALL");
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -212,19 +237,17 @@ public class MainActivity extends AppCompatActivity {
         TrackingService service = retrofit.create(TrackingService.class);
         TrackingRequest request = new TrackingRequest(trackingNumber);
         String authHeader = "Bearer " + authToken;
-//        progressDialog.show();
 
         Call<JsonObject> call = service.sendTrackingId(authHeader, request);
 
         call.enqueue(new Callback<JsonObject>() {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-//                progressDialog.dismiss();
-
                 if (response.isSuccessful()) {
                     JsonObject loginResponse = response.body();
                     JsonObject data = loginResponse.getAsJsonObject("data");
                     TrackingUserDetailsResponse.Data getEditTaskData = new Gson().fromJson(data.toString(), TrackingUserDetailsResponse.Data.class);
+                    TrackingId.setText(getEditTaskData.uid);
                     Name.setText(getEditTaskData.name);
                     Origin.setText(getEditTaskData.companyOrigin);
                     Destination.setText(getEditTaskData.postalAddress);
@@ -233,21 +256,18 @@ public class MainActivity extends AppCompatActivity {
                     Remark.setText(getEditTaskData.remarks);
 //                    myValue = getEditTaskData.getStatus().toString();
                     setStatus = (getEditTaskData.status != null ? getEditTaskData.status.toString() : "No Status ");
-                    System.out.println("setStatus"+setStatus);
                     if (getStatus.equals("Asset Delivered") || getStatus.equals("Shipment Delivered")) {
-                        System.out.println("RECEIVE Asset Delivered OR Shipment Delivered");
+                    } else {
 
-
-
-                    }else {
-                        for (int i = 0; i < shipmentStatusList.size(); i++) {
-                            ShipmentStatus shipmentStatus = shipmentStatusList.get(i);
-                            if (shipmentStatus.getStatusName().equals(setStatus)) {
-                                shipmentStatusSpinner.setSelection(i);
-                                break;
-                            }
-                        }
+//                        for (int i = 0; i < shipmentStatusList.size(); i++) {
+//                            ShipmentStatus shipmentStatus = shipmentStatusList.get(i);
+//                            if (shipmentStatus.getStatusName().equals(setStatus)) {
+//                                shipmentStatusSpinner.setSelection(i);
+//                                break;
+//                            }
+//                        }
                     }
+                    spinnerStatusName = "Select";
                 } else {
                     Toast.makeText(MainActivity.this, "invalid login credentials", Toast.LENGTH_SHORT).show();
                 }
@@ -255,7 +275,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<JsonObject> call, Throwable t) {
-//                progressDialog.dismiss();
                 Log.d("MainActivity", "Failure: " + t.getMessage());
 
                 // Handle the error
@@ -263,10 +282,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+
     private void updateTrackingDetails(String trackingNumber, String statusName) {
 //        progressDialog = new ProgressDialog(this);
 //        progressDialog.setMessage("Loading...");
 //        progressDialog.setCancelable(false);
+        System.out.println("updateTrackingDetails");
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -282,12 +303,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
 //                progressDialog.dismiss();
-
                 if (response.isSuccessful()) {
-                    System.out.println("Status Changes Successfully");
+
                     trackingNumberAPI();
+                    shipmentStatusSpinner.setSelection(0); // Change to the first position (0 index)
+                    spinnerStatusName = shipmentStatusList.get(0).getStatusName();
+
+                    Toast.makeText(MainActivity.this, "Status updated successfully", Toast.LENGTH_SHORT).show();
+
                     // Handle successful login
                 } else {
+//                    progressDialog.dismiss();
                     Toast.makeText(MainActivity.this, "Something went Wrong", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -295,7 +321,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<JsonObject> call, Throwable t) {
 //                progressDialog.dismiss();
-
                 Log.d("MainActivity", "Error: " + t.getMessage());
                 Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -303,10 +328,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void verifyStatusOtp(String trackingNumber, String otpText) {
-
-//        progressDialog = new ProgressDialog(this);
-//        progressDialog.setMessage("Loading...");
-//        progressDialog.setCancelable(false);
+        System.out.println("verifyStatusOtp");
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -319,20 +341,18 @@ public class MainActivity extends AppCompatActivity {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("tracking_id", trackingNumber);
         jsonObject.addProperty("otp", otpText);
-//        progressDialog.show();
 
         // Use the Retrofit client and interface to make the API request
         Call<ResponseBody> call = updateStatusVerifyOtp.verifyOtp("Bearer " + authToken, jsonObject);
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-//                progressDialog.dismiss();
 
                 if (response.isSuccessful()) {
                     // Handle successful response
-                    updateTrackingDetails(trackingNumber, statusName);
+                    updateTrackingDetails(trackingNumber, spinnerStatusName);
                     Toast.makeText(MainActivity.this, "OTP Verified Successfully", Toast.LENGTH_SHORT).show();
-
+                    dialog.dismiss();
                 } else {
                     // Handle error response
                     Toast.makeText(MainActivity.this, "Please enter correct OTP", Toast.LENGTH_SHORT).show();
@@ -341,7 +361,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-//                progressDialog.dismiss();
 
                 // Handle failure
                 Log.d("MainActivity", "Failure: " + t.getMessage());

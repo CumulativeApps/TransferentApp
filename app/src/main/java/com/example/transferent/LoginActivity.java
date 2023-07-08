@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 
+
 import com.example.transferent.interfaces.LoginApi;
 import com.google.gson.JsonObject;
 import com.squareup.picasso.Picasso;
@@ -136,7 +137,7 @@ public class LoginActivity extends AppCompatActivity {
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putString("token", token);
                     editor.apply();
-                    Intent i = new Intent(getApplicationContext(),ScanQrCodeActivity.class);
+                    Intent i = new Intent(getApplicationContext(),SelectPODorQRSacnActivity.class);
                     startActivity(i);
                     finish();
                     // Handle successful login

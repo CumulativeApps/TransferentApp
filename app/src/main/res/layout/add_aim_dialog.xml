@@ -67,7 +67,7 @@
             android:background="@drawable/login_btn_background"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Save" />
+            android:text="Submit" />
 
     </LinearLayout>
 

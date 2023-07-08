@@ -3,7 +3,6 @@ package com.example.transferent;
 import static com.example.transferent.utilities.Common.BASE_URL;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -12,14 +11,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.transferent.interfaces.TrackingService;
-import com.example.transferent.models.ShipmentStatus;
 import com.example.transferent.models.TrackingRequest;
 import com.example.transferent.models.TrackingUserDetailsResponse;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -27,11 +24,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.journeyapps.barcodescanner.DecoratedBarcodeView;
-import com.squareup.picasso.Picasso;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -39,8 +31,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class ScanQrCodeActivity extends AppCompatActivity implements View.OnClickListener {
-
+public class PodScanQrCodeActivity extends AppCompatActivity implements View.OnClickListener {
     private Button buttonScan;
     private TextView textViewName, textViewAddress;
     String qrData;
@@ -51,7 +42,7 @@ public class ScanQrCodeActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_scan_qr_code);
+        setContentView(R.layout.activity_pod_scan_qr_code);
         ImageView imageView = findViewById(R.id.imageView);
 
 //        Picasso.get()
@@ -80,7 +71,7 @@ public class ScanQrCodeActivity extends AppCompatActivity implements View.OnClic
         qrScan = new IntentIntegrator(this);
 
         //attaching onclick listener
-        buttonScan.setOnClickListener(this);
+        buttonScan.setOnClickListener(PodScanQrCodeActivity.this);
 
 
     }
@@ -108,7 +99,7 @@ public class ScanQrCodeActivity extends AppCompatActivity implements View.OnClic
             } else {
                 //if qr contains data
                 //converting the data to json
-                 qrData = result.getContents();
+                qrData = result.getContents();
                 trackingNumberAPI(qrData);
 //                    JSONObject obj = new JSONObject(result.getContents());
                 //create a new intent to go to the new activity
@@ -159,7 +150,7 @@ public class ScanQrCodeActivity extends AppCompatActivity implements View.OnClic
                     String DeliveryDate=(getEditTaskData.actualDeliveryDate);
                     System.out.println("DeliveryDate"+DeliveryDate);
 
-                    Intent intent = new Intent(ScanQrCodeActivity.this, MainActivity.class);
+                    Intent intent = new Intent(PodScanQrCodeActivity.this, UploadPODImageActivity.class);
                     //put the data as an extra in the intent
                     intent.putExtra("TRACKING_NUMBER", qrData);
                     intent.putExtra("SET_STATUS", setStatus);
@@ -181,14 +172,14 @@ public class ScanQrCodeActivity extends AppCompatActivity implements View.OnClic
 
 
                 } else {
-                    Toast.makeText(ScanQrCodeActivity.this, "invalid login credentials", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PodScanQrCodeActivity.this, "invalid login credentials", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<JsonObject> call, Throwable t) {
 //                progressDialog.dismiss();
-                Log.d("MainActivity", "Failure: " + t.getMessage());
+                Log.d("PodScanQrCodeActivity", "Failure: " + t.getMessage());
 
                 // Handle the error
             }
